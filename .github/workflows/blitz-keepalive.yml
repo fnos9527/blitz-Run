@@ -1,0 +1,39 @@
+name: Blitz Keepalive
+
+on:
+  schedule:
+    - cron: '30 16 * * *'   # UTC 16:30 = 北京时间 00:30
+  workflow_dispatch:
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Install Playwright
+        run: |
+          npm init -y
+          npm i playwright
+          npx playwright install --with-deps chromium
+
+      - name: Run
+        env:
+          BLITZ_EMAIL: ${{ secrets.BLITZ_EMAIL }}
+          BLITZ_PASSWORD: ${{ secrets.BLITZ_PASSWORD }}
+          TG_BOT_TOKEN: ${{ secrets.TG_BOT_TOKEN }}
+          TG_CHAT_ID: ${{ secrets.TG_CHAT_ID }}
+        run: node blitz.js
+
+      - name: Upload screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: screenshots
+          path: '*.png'
+          if-no-files-found: ignore
